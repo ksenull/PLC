@@ -1,11 +1,11 @@
-import Memory from memory
-import Processor from processing_unit
+from memory import Memory
+from CPU import CPU
 
 class VirtualMachine:
 
     def __init__(self, memory_size=16):
         memory = Memory(memory_size)
-        cpu = Processor()
+        cpu = CPU()
 
     def run(self):
         pass
