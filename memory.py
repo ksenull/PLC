@@ -1,10 +1,10 @@
 
 class Memory:
-    def __init__(self, size):
-        self.cells = [0] * size
+    def __init__(self, memory_size=100):
+        self.memory = [0] * memory_size
 
-    def fetch(self, address):
-        return self.cells[address]
+    def __getitem__(self, item):
+        return self.memory[item]
 
-    def store(self, address, value):
-        self.cells[address] = value
+    def __setitem__(self, key, value):
+        self.memory[key] = value
