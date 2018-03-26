@@ -2,16 +2,16 @@ from cpu import Cpu, memory
 from interpreter import asm_decoder
 
 
-def loadCodeInMemory(code):
+def loadCodeInMemory(cpu, code):
     for i, word in enumerate(code.split()):
-        memory[i] = int(word)
+        cpu.memory[i] = int(word)
 
 
 if __name__ == "__main__":
-    vm = Cpu()
     summator ='./code/summator.asm'
     machine_code = asm_decoder(summator)
-    loadCodeInMemory(machine_code)
+    vm = Cpu(len(machine_code.split()))
+    loadCodeInMemory(vm, machine_code)
     vm.start()
 
 

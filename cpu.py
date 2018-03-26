@@ -1,26 +1,26 @@
 from memory import Memory
 
-memory = Memory()  # one for (multiple) cpu
-
 
 class Cpu:
-    def __init__(self,):
+    def __init__(self, memory_size=100):
         self.program_counter = 0
         self.instruction = 0
         self.address = 0
         self.acc = 0
+        self.memory = Memory(memory_size)
+        self.stack = []
 
     def load(self):
-        self.acc = memory[self.address]
+        self.acc = self.memory[self.address]
 
     def store(self):
-        memory[self.address] = self.acc
+        self.memory[self.address] = self.acc
 
     def add(self):
-        self.acc += memory[self.address]
+        self.acc += self.memory[self.address]
 
     def sub(self):
-        self.acc -= memory[self.address]
+        self.acc -= self.memory[self.address]
 
     def inp(self):
         self.acc = int(input())
@@ -34,15 +34,15 @@ class Cpu:
         self.address = 0
 
     def jump(self):
-        self.program_counter = memory[self.address]
+        self.program_counter = self.memory[self.address]
 
     def j0(self):
         if self.acc == 0:
-            self.program_counter = memory[self.address]
+            self.program_counter = self.memory[self.address]
 
     def j1(self):
         if self.acc > 0:
-            self.program_counter = memory[self.address]
+            self.program_counter = self.memory[self.address]
 
     def start(self):
         while True:
@@ -51,7 +51,7 @@ class Cpu:
                 return
 
     def step(self):
-        command = memory[self.program_counter]
+        command = self.memory[self.program_counter]
         self.instruction = command // 100
         self.address = command % 100
 
