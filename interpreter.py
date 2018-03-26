@@ -1,12 +1,13 @@
-commands = {
-    "LOAD": 1,
-    "STORE": 2,
-    "ADD": 3,
-    "SUB": 4,
-    "INP": 5,
-    "OUT": 6,
-    "HALT": 7,
-    "JUMP": 8,
-    "J0": 9,
-    "J1": 10
-}
+commands = ['add', 'halt', 'inp', 'j0', 'j1', 'jump', 'load', 'out', 'start', 'step', 'store', 'sub']
+
+
+def asm_decoder(filename):
+    machine_program = ''
+    for line in open(filename):
+        words = line.split()
+        command = (commands.index(words[0]) + 1) * 100
+        if len(words) > 1:
+            command += int(words[1])
+
+        machine_program += str(command) + ' '
+    return machine_program

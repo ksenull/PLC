@@ -51,17 +51,12 @@ class Cpu:
                 return
 
     def step(self):
-        self.program_counter += 1
         command = memory[self.program_counter]
         self.instruction = command // 100
         self.address = command % 100
-        if self.instruction == 1:
-            self.load()
-        elif self.instruction == 2:
-            self.store()
-        elif self.instruction == 3:
-            self.add()
-        elif self.instruction == 4:
-            self.sub()
 
-        # TODO
+        method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith('__')]
+        getattr(self, method_list[self.instruction-1])()
+
+        self.program_counter += 1
+
