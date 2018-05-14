@@ -1,6 +1,6 @@
 inp
-store 99
+push
 inp
-add 99
+add SP-1
 out
 halt
