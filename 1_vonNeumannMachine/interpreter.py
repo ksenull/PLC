@@ -103,9 +103,15 @@ def asm_decoder(filename):
             label_addr = labels[label]
             machine_program[ip] = str(com + label_addr)
 
-    return ' '.join(machine_program)
+    with open("./code/factorial.o", "w+") as bin:
+        for word in machine_program:
+            bin.write(word)
+            bin.write(" ")
+    # return ' '.join(machine_program)
 
 
 if __name__ == '__main__':
-    machine_src = asm_decoder('./code/factorial.asm')
-    print(machine_src)
+    asm_decoder('./code/factorial.asm')
+    with open("./code/factorial.o") as bin:
+        for line in bin:
+            print(line)
