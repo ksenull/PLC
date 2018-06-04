@@ -1,5 +1,5 @@
-.init
-    stack_size = 20
+.stack
+    size = 20
 .program
     out 0x0
     inp 0x1
@@ -33,4 +33,5 @@
     ERROR:
         halt
 .data
-    msg  "Hello, please enter number"  0x0
+    msg  Hello, I calculate a factorial of a given number. If you wanna try, please enter the number:
+    ax 0
