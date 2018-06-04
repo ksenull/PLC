@@ -112,7 +112,7 @@ class Interpreter:
             elif is_hex(w):
                 memory_code = 200
                 addr = int(w, 16)
-                addr += 1  # offset for IP written in memory[0]
+                # addr += 1  # offset for IP written in memory[0]
                 args.append(memory_code + addr)
                 if addr >= len(self.memory):
                     raise MemoryError
@@ -138,7 +138,7 @@ class Interpreter:
 
             if words[0] in commands:
                 if words[0] == 'halt':
-                    self.memory[ip] = str(0)
+                    # self.memory[ip] = str(0)
                     ip += 1
                     continue
 
@@ -206,6 +206,7 @@ class Interpreter:
             if addr >= len(self.memory):
                 self.__grow_memory(addr + 1)
             self.memory[addr] = get_value(' '.join(tokens[1:]))
+            last_free += 1
 
     def __grow_memory(self, new_size):
         assert new_size > len(self.memory)
@@ -217,8 +218,8 @@ class Interpreter:
         with open(binary_filename, "wb+") as binary:
 
             # write data in memory
-            binary.write(bytearray(struct.pack('I', self.memory[0])))
-            for val in self.memory[1:self.memory[0] + 1]:  # memory segment
+            binary.write(bytearray(struct.pack('I', self.memory[0] - 1)))
+            for val in self.memory[1:self.memory[0]]:  # memory segment
                 if str(val).isnumeric():
                     val = '0000'
                 val_len = len(val)
