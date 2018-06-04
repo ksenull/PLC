@@ -10,9 +10,9 @@ if __name__ == "__main__":
     vm = Cpu("./code/factorial.o")
     # print(vm.__get_data_from_memory(0))
     # memory = 4 + 2 * 4
-    # pos = memory
-    # print(struct.unpack('I', vm.mm[pos:pos + 4]))
+    # pos = 0
     vm.start()
-    # vm.close()
-    # vm.start()
+    # vm.mm[0:4] = bytearray(struct.pack('I', 42))
+    # print(struct.unpack('I', vm.mm[pos:pos + 4]))
+    vm.close()
 

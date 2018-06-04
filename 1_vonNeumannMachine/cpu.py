@@ -64,13 +64,15 @@ class Cpu:
 
     def __set_data_to_memory(self, cell, value):
         assert cell < self.n_data_elements
+        assert isinstance(value, str)
+        assert str(value).isnumeric()  # vm can input only numbers as for now
         mm_pos = uint_s
         for i in range(self.n_data_elements):
             data_size = struct.unpack('I', self.mm[mm_pos: mm_pos + uint_s])[0]
             mm_pos += uint_s
             if i == cell:
-                assert str(value).isnumeric()  # vm can input only numbers as for now
-                self.mm[mm_pos:mm_pos + data_size] = bytearray(struct.pack('I', value))
+                val = '0' * (uint_s - len(value)) + value
+                self.mm[mm_pos:mm_pos + data_size] = struct.pack('{}s'.format(uint_s), bytearray(val, encoding='utf8'))
                 return
             mm_pos += data_size
 
@@ -81,18 +83,27 @@ class Cpu:
     def __get_from_stack(self, offset):
         assert self.sp >= offset
         mm_pos = self.mm_stack_start + (self.sp - offset) * uint_s
-        return struct.unpack('I', self.mm[mm_pos: mm_pos + uint_s])[0]
+        value = struct.unpack('I', self.mm[mm_pos: mm_pos + uint_s])[0]
+        return value
 
     def __set_stack_top(self, value):
         mm_pos = self.mm_stack_start + self.sp * uint_s
-        self.mm[mm_pos:mm_pos + uint_s] = bytearray(struct.pack('I', value))
+        self.mm[mm_pos:mm_pos + uint_s] = bytearray(struct.pack('I', int(value)))
+
+    def __set_to_stack(self, offset, value):
+        assert self.sp >= offset
+        mm_pos = self.mm_stack_start + (self.sp - offset) * uint_s
+        self.mm[mm_pos:mm_pos + uint_s] = bytearray(struct.pack('I', int(value)))
 
     def __get_value(self, arg):
         storage = arg['type']
         if storage == 'S':
             return self.__get_from_stack(arg['val'])
         elif storage == 'M':
-            return self.__get_data_from_memory(arg['val'])
+            value = self.__get_data_from_memory(arg['val'])
+            if value.isnumeric():
+                return int(value)
+            return value
         else:
             return arg['val']
 
@@ -101,96 +112,99 @@ class Cpu:
         self.arg0 = 0
         self.arg1 = 0
 
-    # def add(self):
-    #     if self.arg0['type'] == 'S':
-    #         pos = self.stack_start + (self.sp + self.arg0['val']) * uint_s
-    #         val = self.mm[pos: pos + uint_s]
-    #         val += self.mm[[-self.arg]
-    #     elif self.is_memory_arg:
-    #         self.acc += self.memory[self.arg]
-    #     else:
-    #         self.acc += self.arg
-    #
-    # def call(self):
-    #     self.jump()
-    #
+    def add(self):
+        assert self.arg0['type'] == 'M' or self.arg0['type'] == 'S'
+        if self.arg0['type'] == 'S':
+            val = self.__get_from_stack(self.arg0['val']) + self.__get_value(self.arg1)
+            self.__set_to_stack(self.arg0['val'], val)
+        else:
+            val = self.__get_data_from_memory(self.arg0['val']) + self.__get_value(self.arg1)
+            self.__set_data_to_memory(self.arg0['val'], val)
+
+    def sub(self):
+        assert self.arg0['type'] == 'M' or self.arg0['type'] == 'S'
+        if self.arg0['type'] == 'S':
+            left = self.__get_from_stack(self.arg0['val'])
+            right = self.__get_value(self.arg1)
+            val = left - right
+            self.__set_to_stack(self.arg0['val'], val)
+        else:
+            val = self.__get_data_from_memory(self.arg0['val']) - self.__get_value(self.arg1)
+            self.__set_data_to_memory(self.arg0['val'], val)
+
+    def mul(self):
+        assert self.arg0['type'] == 'M' or self.arg0['type'] == 'S'
+        if self.arg0['type'] == 'S':
+            val = self.__get_from_stack(self.arg0['val']) * self.__get_value(self.arg1)
+            self.__set_to_stack(self.arg0['val'], val)
+        else:
+            val = self.__get_data_from_memory(self.arg0['val']) * self.__get_value(self.arg1)
+            self.__set_data_to_memory(self.arg0['val'], val)
+
     def push(self):
         if self.arg1['type'] is not None:
-            self.__set_stack_top(self.arg1['val'])
-        self.sp += uint_s
+            if self.arg1['type'] == 'S' or self.arg1['type'] == 'N':
+                value = self.__get_value(self.arg1)
+            else:
+                value = self.arg1['val']
+            self.sp += 1
+            self.__set_stack_top(value)
+            print("[push]", self.__get_stack_top())
+        else:
+            self.sp += 1
 
-    #
-    # def pop(self):
-    #     pass
-    #
+    def pop(self):
+        if self.arg1['type'] == 'N' and self.arg1['val'] is not None:
+            self.sp -= self.arg1['val']
+            print('[pop]', self.arg1['val'])
+        else:
+            self.sp -= 1
+            print('[pop]')
 
     def inp(self):
         assert self.arg1['type'] == 'M'
-        val = int(input())
-        self.__set_data_to_memory(self.arg1['val'], val)
+        val = int(input())  # TODO
+        self.__set_data_to_memory(self.arg1['val'], str(val))
 
     def out(self):
         value = self.__get_value(self.arg1)
         print(value)
 
+    def jump(self):
+        if self.arg1['type'] == 'M':
+            self.ip = self.arg1['val'] - 2  # TODO
+        else:
+            self.ip = self.__get_value(self.arg1) - 2
+
     def j0(self):
-        _, val = self.__get_pos_and_value(self.arg0)
-        if val == 0:
-            where_pos, where_value= self.__get_pos_and_value(self.arg1)
-            assert where_value < self.n_commands
-            self.ip = where_value
-            # self.ip = self.ip - val
-    #
-    # def j1(self):
-    #     if self.acc > 0:
-    #         self.program_counter = self.arg - 1
-    #
-    # def jump(self):
-    #     self.program_counter = self.arg - 1
-    #
-    # def load(self):
-    #     if self.is_stack_arg:
-    #         self.acc = self.stack[-self.arg]
-    #     elif self.is_memory_arg:
-    #         self.acc = self.memory[-self.arg]
-    #     else:
-    #         self.acc = self.arg
-    #
-    # def mul(self):
-    #     if self.is_stack_arg:
-    #         self.acc *= self.stack[-self.arg]
-    #     elif self.is_memory_arg:
-    #         self.acc *= self.memory[self.arg]
-    #     else:
-    #         self.acc *= self.arg
-    #
+        assert self.arg1['type'] == 'M'
+        what = self.__get_value(self.arg0)
+        if what == 0:
+            where = self.arg1['val'] - 1
+            assert self.n_data_elements < where < self.n_commands + self.n_data_elements
+            self.ip = where - 1
 
+    def jeq(self):
+        pass
 
+    def jlt(self):
+        pass
 
+    def call(self):
+        self.jump()
 
-
-    #
-    # def ret(self):
-    #     self.program_counter = self.stack[-1] - 1
-    #     for i in range(self.arg):
-    #         self.stack.pop()
-    #
-    # def store(self):
-    #     self.memory[self.arg] = self.acc
-    #
-    # def sub(self):
-    #     if self.is_stack_arg:
-    #         self.acc -= self.stack[-self.arg]
-    #     elif self.is_memory_arg:
-    #         self.acc -= self.memory[self.arg]
-    #     else:
-    #         self.acc -= self.arg
-    #
-    #
+    def mov(self):
+        assert self.arg0['type'] == 'M' or self.arg0['type'] == 'S'
+        val = self.__get_value(self.arg1)
+        assert str(val).isnumeric()
+        if self.arg0['type'] == 'S':
+            self.__set_to_stack(self.arg0['val'], val)
+        else:
+            self.__set_data_to_memory(self.arg0['val'], val)
 
     def step(self):
-        # print("Instruction counter " + str(self.program_counter))
-        command_pos = uint_s + self.data_segment_size + uint_s + self.ip * uint_s
+        assert self.ip >= self.n_data_elements
+        command_pos = uint_s + self.data_segment_size + uint_s + (self.ip - self.n_data_elements) * uint_s
         command = struct.unpack('I', self.mm[command_pos:command_pos + uint_s])[0]
         # print(command)
         self.instruction = command // 1000000
@@ -219,23 +233,24 @@ class Cpu:
     def start(self):
         mm_pos = 0
         self.n_data_elements = struct.unpack('I', self.mm[mm_pos:mm_pos + uint_s])[0]
-        print("Data elements count", self.n_data_elements)
+        # print("Data elements count", self.n_data_elements)
+        self.ip = self.n_data_elements
 
         mm_pos += uint_s
 
         for i in range(self.n_data_elements):
             data_size = struct.unpack('I', self.mm[mm_pos:mm_pos + uint_s])[0]
-            print("Fragment size:", data_size)
+            # print("Fragment size:", data_size)
             mm_pos += uint_s + data_size  # сдвигаем на размер данных
             self.data_segment_size += uint_s + data_size
 
         self.n_commands = struct.unpack('I', self.mm[mm_pos:mm_pos + uint_s])[0]
-        print("Commands count", self.n_commands)
+        # print("Commands count", self.n_commands)
 
         mm_pos += uint_s + uint_s * self.n_commands
         self.stack_size = struct.unpack('I', self.mm[mm_pos:mm_pos + uint_s])[0]
         self.mm_stack_start += mm_pos + uint_s
-        print("Stack size", self.stack_size)
+        # print("Stack size", self.stack_size)
         while True:
             self.step()
             if self.instruction == 0 or self.ip >= self.n_commands + self.n_data_elements:

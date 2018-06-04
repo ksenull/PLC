@@ -8,7 +8,7 @@
     push IP+3
     push SP-1
     call FAC
-    out SP-1        ;there is an answer on current SP-1
+    out SP        ;there is an answer on current SP
     pop 3           ;clear memory
     halt
     FAC proc
