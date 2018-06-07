@@ -1,5 +1,5 @@
 .stack
-    size = 20
+    size = 30
 .program
     out 0x0
     inp 0x1
@@ -8,7 +8,7 @@
     push IP+3
     push SP-1
     call FAC
-    out SP        ;there is an answer on current SP
+    out SP-2        ;there is an answer on current SP-2
     pop 3           ;clear memory
     halt
     FAC proc
@@ -19,15 +19,15 @@
         push IP+3       ;return address
         push SP-2       ;argument
         call FAC
-        mov SP-2 SP-3   ;copy answer to local variable
+        mov SP-3 SP-2   ;copy answer to local variable
         pop 3           ;clear previous frame
         mul SP SP-1     ;mul local var with arg
-        mov SP SP-3     ;copy local var to place for return value
+        mov SP-3 SP     ;copy local var to place for return value
         pop 1           ;clear local variable
         jump SP-1
     END:
         pop 1           ;n-1 == 0 in this case
-        mov SP SP-2     ;copy to the return value place
+        mov SP-2 SP    ;copy to the return value place
         jump SP-1       ;jum to the ret addr
     FAC endp
     ERROR:

@@ -56,11 +56,12 @@ class Cpu:
                 return value
             mm_pos += data_size
 
-        mm_pos += uint_s  # n_commands offset
-        for i in range(self.n_commands):
-            if cell == i + self.n_data_elements:
-                return struct.unpack('I', self.mm[mm_pos: mm_pos + uint_s])[0]
-            mm_pos += uint_s
+        return cell
+        # mm_pos += uint_s  # n_commands offset
+        # for i in range(self.n_commands):
+        #     if cell == i + self.n_data_elements:
+        #         return struct.unpack('I', self.mm[mm_pos: mm_pos + uint_s])[0]
+        #     mm_pos += uint_s
 
     def __set_data_to_memory(self, cell, value):
         assert cell < self.n_data_elements
@@ -101,7 +102,7 @@ class Cpu:
             return self.__get_from_stack(arg['val'])
         elif storage == 'M':
             value = self.__get_data_from_memory(arg['val'])
-            if value.isnumeric():
+            if str(value).isnumeric():
                 return int(value)
             return value
         else:
@@ -135,18 +136,22 @@ class Cpu:
     def mul(self):
         assert self.arg0['type'] == 'M' or self.arg0['type'] == 'S'
         if self.arg0['type'] == 'S':
-            val = self.__get_from_stack(self.arg0['val']) * self.__get_value(self.arg1)
+            left = self.__get_from_stack(self.arg0['val'])
+            right = self.__get_value(self.arg1)
+            val = left * right
+            # print(left, '*',  right)
             self.__set_to_stack(self.arg0['val'], val)
+            # print("mul", self.__get_stack_top())
         else:
             val = self.__get_data_from_memory(self.arg0['val']) * self.__get_value(self.arg1)
             self.__set_data_to_memory(self.arg0['val'], val)
 
     def push(self):
         if self.arg1['type'] is not None:
-            if self.arg1['type'] == 'S' or self.arg1['type'] == 'N':
-                value = self.__get_value(self.arg1)
-            else:
-                value = self.arg1['val']
+            # if self.arg1['type'] == 'S' or self.arg1['type'] == 'N':
+            value = self.__get_value(self.arg1)
+            # else:
+            #     value = self.arg1['val']
             self.sp += 1
             self.__set_stack_top(value)
             print("[push]", self.__get_stack_top())
@@ -199,6 +204,7 @@ class Cpu:
         assert str(val).isnumeric()
         if self.arg0['type'] == 'S':
             self.__set_to_stack(self.arg0['val'], val)
+            # print('mov', self.__get_from_stack(self.arg0['val']))
         else:
             self.__set_data_to_memory(self.arg0['val'], val)
 
@@ -224,7 +230,7 @@ class Cpu:
         self.arg0, self.arg1 = args
 
         method_name = number_of_commands[self.instruction]
-        print('Calling ' + method_name + ' with args ' + str(self.arg0) + ' and ' + str(self.arg1))
+        # print('Calling ' + method_name + ' with args ' + str(self.arg0) + ' and ' + str(self.arg1))
 
         self.__getattribute__(method_name)()
 
